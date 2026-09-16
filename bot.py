@@ -11,15 +11,13 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "RDP Fight Server is Live!"
+    return "RDP Proxy Fight Server is Live!"
 
 def run_dummy_server():
-    # Render automatic 'PORT' variable deta hai, hum use use karenge
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 # ---------------------------------
 
-# --- TOKENS (Render dashboard se uthayege) ---
 SESSION_ID = os.environ.get('SESSION_ID')
 CSRF_TOKEN = os.environ.get('CSRF_TOKEN')
 
@@ -33,6 +31,14 @@ headers = {
     'x-ig-app-id': '1217981644879628',
 }
 
+# Free Proxy List (Instagram Datacenter Bypass Ke Liye)
+FREE_PROXIES = [
+    "http://45.77.56.124:8080",
+    "http://95.179.212.190:80",
+    "http://149.28.134.147:3128",
+    "http://207.148.77.202:8080"
+]
+
 def generate_context():
     return ''.join(random.choices(string.digits, k=19))
 
@@ -40,10 +46,8 @@ def generate_random_string():
     return ''.join(random.choices(string.ascii_letters, k=4))
 
 def start_mobile_fight():
-    # Pehle 10 second ka wait karenge taaki Render ka web server stable ho jaye
-    print("⚔️ DUMMY SERVER OK! WAITING FOR DEPLOYMENT ACCEPATANCE... ⚔️\n")
+    print("⚔️ PROXY BYPASS ENGINE ACTIVE... WAITING FOR DEPLOYMENT... ⚔️\n")
     time.sleep(10)
-    print("🚀 BOT ACTIVE! FIRING SPAM HITS NOW... 🚀\n")
     
     while True:
         unique_id = generate_random_string()
@@ -55,27 +59,31 @@ def start_mobile_fight():
             'client_context': generate_context()
         }
         
+        # Har hit par alag IP use hogi taaki ghost block na ho
+        proxy = random.choice(FREE_PROXIES)
+        proxy_dict = {"http": proxy, "https": proxy}
+        
         try:
             response = requests.post(
                 "https://instagram.com", 
                 headers=headers, 
                 data=data, 
-                timeout=10
+                proxies=proxy_dict,
+                timeout=8
             )
-            if response.status_code == 200:
-                print(f"[✅ CLOUD HIT SUCCESS] -> {full_text}")
-            else:
-                print(f"[❌ Drop/Block] -> Status: {response.status_code}")
-        except Exception as e:
-            print(f"[❌ Network Error] -> {e}")
             
-        time.sleep(2.0)
+            if response.status_code == 200 and '"status":"ok"' in response.text.lower():
+                print(f"[🔥 PROXY BYPASS REAL HIT] -> {full_text} via {proxy}")
+            else:
+                print(f"[❌ Drop Attempted By IG] -> Proxy Rotated.")
+        except Exception as e:
+            # Agar koi proxy slow ho ya na chale, toh loop rkega nahi, next proxy par switch ho jayega
+            print(f"[🔄 Switching Proxy] -> Retrying with next IP...")
+            
+        time.sleep(2.5)
 
 if __name__ == "__main__":
-    # 1. Dummy Web Server ko background thread me chalu karenge Render ko pass karne ke liye
     server_thread = Thread(target=run_dummy_server)
     server_thread.start()
-    
-    # 2. Main bot loop shuru karenge jo text fire karega
     start_mobile_fight()
     
